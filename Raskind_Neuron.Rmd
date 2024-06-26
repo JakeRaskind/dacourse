@@ -1,0 +1,110 @@
+---
+title: "Raskind Neuron"
+output: html_notebook
+---
+
+Данные: информация о количестве n-gram нейронов в модели ruGPT(https://huggingface.co/ai-forever/rugpt3small_based_on_gpt2) на самых частых 1,2 и 3-граммах (информация о частоте - НКРЯ). Подробнее о n-gram нейронах - в статье(https://arxiv.org/pdf/2309.04827) Код для создания пробингового датасета и сбора активаций - в репозитории
+```{r}
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+```
+Гипотеза H_0: Слой, на котором расположен соответствующий 1-gram нейрон, не связан с частотностью слова
+Гипотеза H_1: Существует корреляция между слоем с 1-gram нейроном и частотой слова
+
+Импортируем данные по 1-gram активациям
+```{r}
+unigram <- read.csv("unigr_layers.csv", encoding = "UTF-8")
+layers <- as.vector(unigram$layer)
+ranks <- as.vector(unigram$rank)
+```
+Визуализируем распределение
+```{r}
+agg_table <- unigram %>% group_by(layer, rank) %>% 
+  summarise(cum_neurons=n())
+ggplot(data = agg_table, aes(x = rank, y = layer)) +
+  geom_point(aes(size = cum_neurons), color = "cornflowerblue") + 
+  labs(title = "Unigram neuron distribution", 
+       x = "Frequency rank", 
+       y = "Layer")
+```
+```{r}
+cor.test(layers, ranks, method = 'spearman')
+```
+```{r}
+cor.test(layers, ranks, method = 'kendall')
+```
+Гипотеза H_0: Слой, на котором расположен соответствующий 2-gram нейрон, не связан с частотностью слова
+Гипотеза H_1: Существует корреляция между слоем с 2-gram нейроном и частотой слова
+
+Импортируем данные по 2-gram активациям
+```{r}
+bigram <- read.csv("bigr_layers.csv", encoding = "UTF-8")
+b_layers <- as.vector(bigram$layer)
+b_ranks <- as.vector(bigram$rank)
+```
+Визуализируем распределение
+```{r}
+agg_table <- bigram %>% group_by(layer, rank) %>% 
+  summarise(cum_neurons=n())
+ggplot(data = agg_table, aes(x = rank, y = layer)) +
+  geom_point(aes(size = cum_neurons), color = "cornflowerblue") + 
+  labs(title = "Bigram neuron distribution", 
+       x = "Frequency rank", 
+       y = "Layer")
+```
+```{r}
+cor.test(b_layers, b_ranks, method = 'spearman')
+```
+```{r}
+cor.test(b_layers, b_ranks, method = 'kendall')
+```
+Гипотеза H_0: Слой, на котором расположен соответствующий 3-gram нейрон, не связан с частотностью слова
+Гипотеза H_1: Существует корреляция между слоем с 3-gram нейроном и частотой слова
+
+Импортируем данные по 3-gram активациям
+```{r}
+trigram <- read.csv("trigr_layers.csv", encoding = "UTF-8")
+t_layers <- as.vector(trigram$layer)
+t_ranks <- as.vector(trigram$rank)
+```
+Визуализируем распределение
+```{r}
+agg_table <- trigram %>% group_by(layer, rank) %>% 
+  summarise(cum_neurons=n())
+ggplot(data = agg_table, aes(x = rank, y = layer)) +
+  geom_point(aes(size = cum_neurons), color = "cornflowerblue") + 
+  labs(title = "Bigram neuron distribution", 
+       x = "Frequency rank", 
+       y = "Layer")
+```
+```{r}
+cor.test(t_layers, t_ranks, method = 'spearman')
+```
+```{r}
+cor.test(t_layers, t_ranks, method = 'kendall')
+```
+
+Хотелось бы также понять, зависит ли слой n-gram нейрона от того, насколько n-gram он ориентирован. В идеале можно было бы провести дисперсионный анализ, но, так как все величины дискретны, ANOVA неприменим. Воспользуемся тем, что n-граммы естественным образом организуются в ранги, за которыми теоретически есть языковая интуиция (чем больше n-грамма, тем сложнее оборот, и тем дальше в нейросети его надо анализировать)
+
+```{r}
+cum_layers <- c(layers, b_layers, t_layers)
+
+```
+
+```{r}
+uni <- rep(1, length(layers))
+bi <- rep(2, length(b_layers))
+tri <- rep(3, length(t_layers))
+cum = c(uni, bi, tri)
+```
+
+```{r}
+cor.test(cum_layers, cum, method = 'kendall')
+```
+Выводы:
+
+С увеличением величны n-грам уменьшается предполагаемая зависимость частоты токена и и слоя, на котором он явно обрабатывается
+
+C другой стороны, место обработки самой n-граммы статистически значимо не кореллирует с длиной самой n-граммы. Возможно, это связано с тем, какую роль выполняют активирующиеся нейроны в обработке последовательности.
+
