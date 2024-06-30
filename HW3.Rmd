@@ -1,0 +1,412 @@
+---
+title: "HW3"
+output: html_document
+date: "2024-03-05"
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message=FALSE}
+library(tidyverse) 
+```
+
+## 1. Универсальные лингвические иерархии: порядок прилагательных в новогреческом языке (стандартный и кипрский диалекты)  
+
+[Данные](https://raw.githubusercontent.com/olesar/2023dav4compling/main/data/greek-word-order-mono_translit.txt) (социолингвистическая анкета и результаты эксперимента в одном файле) взяты, с адаптацией, из исследования:
+Leivada, Evelina; Westergaard, Marit, 2019, [Universal linguistic hierarchies are not innately wired](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6679903/pdf/peerj-07-7438.pdf). PeerJ, v.7.
+
+Источник данных: репозиторий TROLLing:
+Leivada, Evelina; Westergaard, Marit, 2019, "Replication Data for: Universal linguistic hierarchies are not innately wired", https://doi.org/10.18710/NTLLUF, DataverseNO, V1
+
+#### Конструкции с двумя прилагательными
+
+В английском языке порядок двух прилагательных в таких фразах, как:
+```
+ a big black bag # хорошо
+*a black big bag # неприемлемо, грамматически неправильно или семантически аномально
+```
+определяется семантическим классом прилагательного (например, прилагательное «цвета» ближе к существительному, чем прилагательное «размера»).
+
+Синтаксическая иерархия близости к существительному в универсальной грамматике Хомского предполагает следующий порядок, который считается врожденным и универсальным (= действительным для всех языков).
+
+```
+Subjective Comment > Evidential > Size > Length
+> Height > Speed > Depth > Width > Temperature > Wetness > Age
+> Shape > Color > Nationality/Origin > Material 
+# (на основе Scott, 2002: 114)
+```
+
+Цель исследования Leivada & Westergaard — определить, что происходит, когда люди воспринимают примеры с порядком, который либо соответствует иерархии, либо нарушает ее.
+
+#### Метод
+
+В первом эксперименте 140 нейротипичных взрослых носителей языка выполнили задание с выбором на время (a timed forced choice task), в котором использовались стимулы, представляющие комбинацию двух прилагательных и конкретного существительного (например, *Έπια ένα στενό ισπανικό βρασιόλι.* 'I bought a narrow Spanish bracelet.'). Были собраны данные двух типов:
+
+(i) суждения о приемлемости по 3-балльной шкале Ликерта:
+     1. неправильно,
+     2. ни правильно, ни неправильно,
+     3. правильный;
+
+(ii) время реакции (RT).
+
+В стимулах использовались три условия:  
+1. прилагательное размера > прилагательное национальности, 
+2. прилагательное цвета > прилагательное формы,  
+3. прилагательное субъективного комментария > прилагательное материала. 
+
+Каждое условие предъявлялось в двух вариантах порядка слов. При конгруэнтном порядке расположение пары прилагательных соответствовало тому, что диктует универсальная иерархия. В неконгруэнтном порядке порядок был обратным, поэтому иерархия была нарушена.
+
+Во втором эксперименте 30 билингвов (носителей стандартного и кипрского греческого) были протестированы на обоих диалектах, по 36 наблюдений на участника, по 18 на каждый вариант.
+
+В обоих экспериментах использовались два типа [филлеров] (https://www.hlp.rochester.edu/resources/BCS152-Tutorial/Fillers.html): FillerAcceptable и FillerUnacceptable — предложения, которые включали правильно построенные и неграмматические структуры, соответственно. В обеих задачах соотношение наполнителей к реальным тестовым структурам составляло 2:1. Смотри также [ключи к данным](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6679903/bin/peerj-07-7438-s001.txt).
+
+#### Данные
+
+Загрузите данные из файла в переменную mono, переведя строковые данные в факторы. В переменной mono_socio сохраните данные социолингвистической анкеты. В переменной mono оставьте только данные самого эксперимента. Переименуйте заголовки в последней таблице в следующие: "ParticipantID", "QuestionType", "NQuestions", "Likert", "RT".
+
+```{r}
+suppressMessages(library(tidyverse)) 
+mono <- read.csv("https://raw.githubusercontent.com/olesar/2023dav4compling/main/data/greek-word-order-mono_translit.txt", sep=";")
+mono_socio <- mono[mono$type.of.question == "Form",]
+mono_socio %>% mutate(across(where(is.character),as.factor)) -> mono_socio
+mono <- mono[mono$type.of.question != "Form",]
+mono %>%  transform(reaction.times.in.milliseconds = as.numeric(reaction.times.in.milliseconds)) -> mono
+mono %>% mutate(across(where(is.character),as.factor)) -> mono
+mono %>% select(!X) -> mono
+colnames(mono) <- c("ParticipantID", "QuestionType", "NQuestions", "Likert", "RT")
+#YOUR CODE HERE 
+```
+
+## Описание данных
+
+### 1.1
+
+Взглянем на данные, чтобы ответить на следующие вопросы о социолингвистических характеристиках испытуемых: 
+
+1. Сколько участников указано в датафрейме?
+
+2. Сколько из них женщин и мужчин?
+
+3. Какие уровни образования указаны в датафрейме?
+
+4. Сколько участников каждого уровня образования?
+
+5. Сколько леворуких и праворуких участников?
+
+Напишите код, представляющий ответы на эти вопросы в виде одной или нескольких таблиц. 
+Используйте функции из пакета tidyverse: `filter`, `group_by`, `count` and `distinct`. 
+(Еще один способ - использовать `pivot_wider`.)
+
+```{r}
+mono_socio %>% pivot_wider(names_from = reaction.times.in.milliseconds, values_from = X) -> mono_socio
+```
+
+
+```{r 1.1}
+nrow(mono_socio)
+mono_socio %>% group_by(sex) %>% summarise(n())
+mono_socio["education"] %>% distinct()
+mono_socio %>% group_by(education) %>% summarise(n())
+mono_socio %>% group_by(handedness) %>% summarise(n())
+```
+### 1.2
+
+Постройте график плотности, который показывает распределение RT в эксперименте в целом (для всех участников и условий. Отобразите красным пунктиром линию, показывающую среднее значение RT. 
+
+```{r 1.2}
+ggplot(mono, aes(x=RT)) + 
+  geom_density() +
+  geom_vline(aes(xintercept=mean(RT)),
+            color="red", linetype="dashed", size=1)
+```
+
+### 1.3
+
+Верно ли, что данные времени реакции нормально распределены? Есть ли в распределении длинные левые или правые хвосты?? 
+
+```
+Распределение не нормальное, есть длинный правый хвост
+```
+
+### 1.4
+
+Преобразуйте данные с помощью функциии логарифма (RTlog = log10(RT)).
+
+```{r 1.4}
+mono['logRT'] <- log10(mono$RT) 
+```
+
+### 1.5
+
+Создайте график, похожий на 1.3, но показывающий логарифимированные значения RT. 
+
+```{r 1.5}
+ggplot(mono, aes(x=logRT)) + 
+  geom_density() +
+  geom_vline(aes(xintercept=mean(logRT)),
+            color="red", linetype="dashed", size=1)
+```
+
+### 1.6
+
+Отфильтруйте выбросы:  
+* автоматические ответы, время реакции на которые меньше 600 ms (будем полагать, что кнопка была нажата слишком быстро, еще до того, как у участника было достаточно времени рассмотреть показанный ему стимул и принять решение);  
+* ответы, в которых RTlog отличается от среднего значения RTlog более, чем на 3 стандартных отклонения (SD);  
+* филлеры (как приемлемые, так и неприемлемые).  
+Сохраните очищенные от выбросов данные в переменную `mono1`.
+
+```{r 1.6}
+sd = sd(mono$logRT)
+m = mean(mono$logRT)
+mono %>% filter(RT > 600 & abs(logRT - m) < sd * 3 & NQuestions < 99) -> mono1
+```
+
+Воспроизведите графики типа показанных на Рис. 1-7 в статье, используя пакет `ggplot2`. 
+Визуально, как по оформлению, так и по отображаемым значениям, они могут отличаться от приведенных в статье (наши данные могут не во всем соответствовать тем, что использовали авторы в статье).  
+
+### 1.7.1
+
+Рисунок 1
+```{r}
+library(plyr)
+```
+
+```{r}
+inters<-cut(as.numeric(mono1$NQuestions),breaks = c(80, 86.5, 92.5, 98))
+levels(inters) <- c("Size-Nationality", "Shape-color", "Subjective comment-material")
+mono1["Stimulus"] <- inters
+```
+
+```{r}
+bools <- as.factor((as.numeric(mono1$NQuestions) - 81) %% 6 < 3)
+levels(bools) <- c("Incongruent", "Congruent")
+mono1["Order"] <- bools
+```
+
+```{r}
+bools <- as.factor(((mono1$NQuestions) - 81) %% 3)
+mono1["n_question"] <- bools
+```
+
+```{r 1.7.1}
+agg <- aggregate(mono1$RT, by=list(mono1$Stimulus, mono1$Likert, mono1$Order), FUN=length)
+colnames(agg) <- c("Hierarchy", "Answer", "Order", "value")
+# agg
+ggplot(agg, aes(fill=Answer, x=Hierarchy, y=value)) +
+  geom_bar(position="dodge", stat="identity") +
+  facet_grid(~Order) +
+  theme(text = element_text(size = 7))
+
+```
+
+### 1.7.2
+
+Рисунок 2
+
+```{r 1.7.2}
+agg <- aggregate(mono1$RT, by=list(mono1$Likert, mono1$Order), FUN=length)
+colnames(agg) <- c("Answer", "Order", "value")
+# agg
+ggplot(agg, aes(fill=Answer, x=Answer, y=value)) +
+  geom_bar(position="dodge", stat="identity") +
+  facet_grid(~Order) +
+  theme(text = element_text(size = 7))
+```
+
+### 1.7.3
+
+Рисунок 3
+
+```{r 1.7.3}
+mono1 %>% select(c("ParticipantID","logRT", "Order", "Stimulus", "n_question")) %>% 
+  pivot_wider(names_from = c("Order", "Stimulus"), values_from = logRT) %>%
+  pivot_longer(!c("ParticipantID","n_question"), names_to = "Type", values_to = "logRT") -> agg
+  
+
+# agg
+ggplot(agg, aes(x=Type, y=logRT)) +
+  geom_boxplot() +
+  theme(text = element_text(size = 7))
+```
+
+```{r}
+agg[!complete.cases(agg), ]
+```
+### 1.7.4
+
+Рисунок 4
+
+```{r 1.7.4}
+mono1 %>% select(c("ParticipantID","RT", "Order", "Stimulus", "n_question")) %>% 
+  pivot_wider(names_from = c("Order", "Stimulus"), values_from = RT) %>%
+  pivot_longer(!c("ParticipantID","n_question"), names_to = "Type", values_to = "RT") -> agg
+  
+
+# agg
+ggplot(agg, aes(x=Type, y=RT)) +
+  geom_boxplot() +
+  theme(text = element_text(size = 7))
+```
+
+### 1.7.5
+
+Рисунок 5
+
+```{r 1.7.5}
+# mono1 %>% select(c("ParticipantID","logRT", "Order", "Stimulus", "n_question")) %>% 
+#   pivot_wider(names_from = c("Order"), values_from = logRT) %>%
+#   pivot_longer(!c("ParticipantID","n_question"), names_to = "Type", values_to = "logRT") -> agg
+  
+
+# agg
+ggplot(mono1, aes(x=Order, y=logRT)) +
+  geom_boxplot() +
+  theme(text = element_text(size = 15))
+```
+
+### 1.7.6
+
+Рисунок 6
+
+```{r 1.7.6}
+ggplot(mono1, aes(x=Order, y=RT)) +
+  geom_boxplot() +
+  theme(text = element_text(size = 15))
+```
+
+### 1.7.7
+
+Рисунок 7
+
+```{r 1.7.7}
+ggplot(mono1, aes(fill = Order, x=Likert, y=logRT)) +
+  geom_violin() +
+  geom_boxplot(width=0.4, position = position_dodge(0.9))
+  theme(text = element_text(size = 15))
+```
+
+### 1.8
+
+T-test. Проанализируйте разницу в среднем значении RTlog, сгруппировав данные по порядку слов в стимуле (конгруэнтный vs неконгруэнтный). Сформулируйте нулевую и альтернативную гипотезу, аргументируйте, какой тип t-test'а следует применить, сделайте статистический и содержательный вывод о значимости различия.  
+
+```
+H0 RTlog (Congr) == RTlog(Incongr)
+H1 RTlog(Congr) != RTlog(Incongr)
+
+дисперсии примерно равны, так что можно использовать двусторонний т-тест на сравнение двух выборок. В результате p-value близка к 1, 0 принадлежит доверительному интервалу - следовательно, мы не можем отвергнуть нулевую гипотезу, то есть не выявлено статистически значимых различий между скоростью реакции на разные порядки
+
+```
+
+```{r 1.8}
+#YOU CODE HERE
+x = filter(mono1, Order == "Congruent")$logRT
+y = filter(mono1, Order == "Incongruent")$logRT
+
+sd(x)
+sd(y)
+
+t.test(x,y, alternative = "two.sided", var.equal = TRUE)
+```
+
+### 1.9
+
+ANOVA. Проанализируйте разницу в среднем значении RTlog, сгруппировав данные по трем условиям 
+(прилагательное размера > прилагательное национальности, прилагательное цвета > прилагательное формы, прилагательное субъективного комментария > прилагательное материала) и по участнику. Сформулируйте нулевую и альтернативную гипотезу, аргументируйте, какой тип дисперсионного анализа следует применить, сделайте статистический и содержательный вывод о значимости различия. Это задание выполняется только для ответов при порядке слов Incongruent.  
+
+```
+Хоть дисперсии в группах примерно равны, остатки в группах не распределены нормально, ппоэтому надо использовать критерий Краскела-Уоллиса. Из результатов видно, что среди людей есть оазличия в реакциях, а между типами стимулов - нет
+```
+
+```{r}
+#YOU CODE HERE
+library(rstatix)
+mono1 %>% filter(Order == "Incongruent") -> inc
+levene_test(logRT ~ Stimulus, data = inc)
+levene_test(logRT ~ ParticipantID, data = inc)
+
+
+
+```
+```{r}
+inc %>% select(c("Stimulus", "logRT")) %>% 
+  group_by(Stimulus) %>%
+  mutate_all(funs(.-mean(.))) -> res
+
+shapiro.test(filter(res, Stimulus == "Size-Nationality")$logRT)
+shapiro.test(filter(res, Stimulus == "Shape-color")$logRT)
+shapiro.test(filter(res, Stimulus == "Subjective comment-material")$logRT)
+
+```
+
+```{r}
+inc %>% select(c("ParticipantID", "logRT")) %>% 
+  group_by(ParticipantID) %>%
+  mutate_all(funs(.-mean(.))) -> res
+shapiro.test(res$logRT)
+
+
+```
+
+
+```{r 1.9}
+kruskal.test(logRT ~ ParticipantID, data=inc)
+
+kruskal.test(logRT ~ Stimulus, data=inc)
+
+
+```
+
+### 1.10  
+
+Post-hoc тест. Примените TukeyHSD тест, чтобы выяснить, какие конкретно пары условий TypeOfStimuli отличаются друг от друга по среднему значению RTlog.  
+Это задание, аналогично, выполняется только для ответов при порядке слов Incongruent.  
+
+```{r 1.10}
+aov  <- aov(logRT ~ Stimulus, data = inc)
+TukeyHSD(aov, conf.level = 0.95)
+```
+
+Запишите ниже интерпретацию post-hoc теста.  
+
+```
+Опять же, значимой разницы нет
+
+```
+
+## 2. Тест хи-квадрат и его аналоги (ваши данные)  
+
+Найдите в публичных репозиториях (OSF, kaggle, Trolling, https://datasetsearch.research.google.com и т. д.) или возьмите ваши собственные данные, подходящие для проведения теста на (не)зависимость двух номинальных переменных. Данные должны быть лингвистическими, личные данные могут быть из курсовой, диплома, экспедиций, ваших исследовательских проектов и т. п. Вы можете модифицировать как общедоступные чужие, так и собственные данные.  
+
+### 2.1 
+
+Сформулируйте нулевую и альтернативную гипотезы
+
+```
+
+```
+
+### 2.2 
+
+Выложите файл с данными в свой репозиторий/облако. Прочитайте данные, дав на них ссылку URL. Постройте таблицу сопряженности.   
+
+```{r 2.2}
+
+```
+
+### 2.3
+
+Проведите анализ, аргументировав выбор статистического теста. Сформулируйте статистический и содержательный вывод о значимости. Проведите анализ величины эффекта (если необходимо). Проведите post-hoc тест(ы) (если необходимо).
+
+```
+YOUR TEXT HERE
+```
+
+
+```{r 2.3}
+#YOU CODE HERE
+```
